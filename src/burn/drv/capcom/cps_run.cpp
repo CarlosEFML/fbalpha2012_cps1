@@ -31,7 +31,7 @@ static void CpsQSoundCheatSearchCallback()
 {
 	// Q-Sound Shared RAM ranges - not useful for cheat searching, and runs the Z80
 	// in the handler, exclude it from cheat searching
-	if (Cps1Qs == 1) {	
+	if (Cps1Qs == 1) {
 		CheatSearchExcludeAddressRange(0xF18000, 0xF19FFF);
 		CheatSearchExcludeAddressRange(0xF1E000, 0xF1FFFF);
 	}
@@ -61,11 +61,11 @@ static INT32 DrvReset()
 	if (Cps1Qs == 1) {			// Sound init (QSound)
 		QsndReset();
 	}
-	
+
 	if (CpsRunResetCallbackFunction) {
 		CpsRunResetCallbackFunction();
 	}
-	
+
 	HiscoreReset();
 
 	return 0;
@@ -100,11 +100,11 @@ static const eeprom_interface cps2_eeprom_interface =
 INT32 CpsRunInit()
 {
 	SekInit(0, 0x68000);					// Allocate 68000
-	
+
 	if (CpsMemInit()) {						// Memory init
 		return 1;
 	}
-	
+
 	if (PangEEP) {
 		EEPROMInit(&cps2_eeprom_interface);
 	} else {
@@ -137,18 +137,18 @@ INT32 CpsRunInit()
 	}
 
 	if (PangEEP || Cps1Qs == 1 || CpsBootlegEEPROM) EEPROMReset();
-	
+
 	if (CpsRunInitCallbackFunction) {
 		CpsRunInitCallbackFunction();
 	}
-	
+
 	DrvReset();
 
 	//Init Draw Function
 	DrawFnInit();
-	
+
 	pBurnDrvPalette = CpsPal;
-	
+
 	if (Cps1Qs == 1) {
 		CheatSearchInitCallbackFunction = CpsQSoundCheatSearchCallback;
 	}
@@ -176,7 +176,7 @@ INT32 CpsRunExit()
 	CpsMemExit();
 
 	SekExit();
-	
+
 	if (CpsRunExitCallbackFunction) {
 		CpsRunExitCallbackFunction();
 		CpsRunExitCallbackFunction = NULL;
@@ -186,9 +186,9 @@ INT32 CpsRunExit()
 	CpsRunFrameStartCallbackFunction = NULL;
 	CpsRunFrameMiddleCallbackFunction = NULL;
 	CpsRunFrameEndCallbackFunction = NULL;
-	
+
 	Cps1VBlankIRQLine = 2;
-	
+
 	Cps2DisableQSnd = 0;
 	CpsBootlegEEPROM = 0;
 
@@ -287,12 +287,12 @@ INT32 Cps1Frame()
 	if (Cps1Qs == 1) {
 		QsndNewFrame();
 	} else {
-		if (!Cps1DisablePSnd) {
-			ZetOpen(0);
-			PsndNewFrame();
-		}
+		// if (!Cps1DisablePSnd) {
+		// 	ZetOpen(0);
+		// 	PsndNewFrame();
+		// }
 	}
-	
+
 	if (CpsRunFrameStartCallbackFunction) {
 		CpsRunFrameStartCallbackFunction();
 	}
@@ -312,7 +312,7 @@ INT32 Cps1Frame()
 
 	for (i = 0; i < 4; i++) {
 		nNext = ((i + 1) * nCpsCycles) >> 2;					// find out next cycle count to run to
-		
+
 		if (i == 2 && CpsRunFrameMiddleCallbackFunction) {
 			CpsRunFrameMiddleCallbackFunction();
 		}
@@ -327,26 +327,26 @@ INT32 Cps1Frame()
 		}
 
 		SekRun(nNext - SekTotalCycles());						// run 68K
-		
+
 //		if (pBurnDraw) {
 //			CpsDraw();										// Draw frame
 //		}
+	}
+
+	if (Cps1Qs == 1) {
+		QsndEndFrame();
+	} else {
+		// if (!Cps1DisablePSnd) {
+		// 	PsndSyncZ80(nCpsZ80Cycles);
+		// 	PsmUpdate(nBurnSoundLen);
+		// 	ZetClose();
+		// }
 	}
 
 	if (!nSkipFrame) {
 		CpsDraw();										// Draw frame
 	}
 
-	if (Cps1Qs == 1) {
-		QsndEndFrame();
-	} else {
-		if (!Cps1DisablePSnd) {
-			PsndSyncZ80(nCpsZ80Cycles);
-			PsmUpdate(nBurnSoundLen);
-			ZetClose();
-		}
-	}
-	
 	if (CpsRunFrameEndCallbackFunction) {
 		CpsRunFrameEndCallbackFunction();
 	}

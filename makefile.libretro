@@ -62,7 +62,7 @@ else
 endif
 else
 	OBJOUT   = -o
-	LINKOUT  = -o 
+	LINKOUT  = -o
 	LD = $(CXX)
 endif
 
@@ -106,7 +106,7 @@ endif
 
 ifeq ($(platform),ios-arm64)
 	CC = cc -arch arm64 -isysroot $(IOSSDK)
-	CXX = c++ -arch arm64 -isysroot $(IOSSDK)   
+	CXX = c++ -arch arm64 -isysroot $(IOSSDK)
 else
    CC = cc -arch armv7 -isysroot $(IOSSDK)
 	CXX = c++ -arch armv7 -isysroot $(IOSSDK)
@@ -132,7 +132,7 @@ ifeq ($(IOSSDK),)
 endif
 
    CC = cc -arch arm64 -isysroot $(IOSSDK)
-   CXX = c++ -arch arm64 -isysroot $(IOSSDK)   
+   CXX = c++ -arch arm64 -isysroot $(IOSSDK)
    CFLAGS += -DIOS
    CFLAGS += $(MINVERSION)
 
@@ -234,14 +234,14 @@ else ifeq ($(platform), rpi2)
    PLATFORM_DEFINES += -fomit-frame-pointer -ffast-math
    PLATFORM_DEFINES += -DARM
    CXXFLAGS += $(CFLAGS) -fno-rtti -fno-exceptions
-   CPU_ARCH := arm 
+   CPU_ARCH := arm
 
 # Classic Platforms ####################
 # Platform affix = classic_<ISA>_<µARCH>
 # Help at https://modmyclassic.com/comp
 
-# (armv7 a7, hard point, neon based) ### 
-# NESC, SNESC, C64 mini 
+# (armv7 a7, hard point, neon based) ###
+# NESC, SNESC, C64 mini
 else ifeq ($(platform),$(filter $(platform),classic_armv7_a7 unix-armv7-hardfloat-neon))
 	TARGET := $(TARGET_NAME)_libretro.so
 	fpic := -fPIC
@@ -396,11 +396,13 @@ endif
 
 FBA_CXXSRCS := $(GRIFFIN_CXXSRCFILES) $(filter-out $(BURN_BLACKLIST),$(foreach dir,$(FBA_SRC_DIRS),$(wildcard $(dir)/*.cpp)))
 FBA_CXXSRCS += $(LIBRETRO_DIR)/libretro.cpp
+SOURCES_AS = $(FBA_CPU_DIR)/cyclone.S
 FBA_CXXOBJ := $(FBA_CXXSRCS:.cpp=.o)
 FBA_CSRCS := $(filter-out $(BURN_BLACKLIST),$(foreach dir,$(FBA_SRC_DIRS),$(wildcard $(dir)/*.c)))
 FBA_COBJ := $(FBA_CSRCS:.c=.o)
+FBA_ASOBJ := $(SOURCES_AS:.S=.o)
 
-OBJS := $(FBA_COBJ) $(FBA_CXXOBJ)
+OBJS := $(FBA_ASOBJ) $(FBA_COBJ) $(FBA_CXXOBJ)
 
 FBA_DEFINES += -DFBACORES_CPS \
 	-DUSE_SPEEDHACKS -D__LIBRETRO__ \
@@ -432,15 +434,15 @@ INCDIRS += -I$(LIBRETRO_COMM_DIR)/include/compat/msvc
 endif
 
 ifeq ($(LIBRETRO_OPTIMIZATIONS), 1)
-FBA_DEFINES += -D__LIBRETRO_OPTIMIZATIONS__ 
+FBA_DEFINES += -D__LIBRETRO_OPTIMIZATIONS__
 endif
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -O0 -g
 CXXFLAGS += -O0 -g
 else
-CFLAGS += -O2 -DNDEBUG
-CXXFLAGS += -O2 -DNDEBUG
+CFLAGS += -O3 -DNDEBUG
+CXXFLAGS += -O3 -DNDEBUG
 endif
 
 ifeq ($(platform), sncps3)
@@ -501,10 +503,10 @@ else
 endif
 
 %.o: %.cpp
-	$(CXX) -c $(OBJOUT)$@ $< $(CXXFLAGS) $(INCDIRS)
+	$(CXX) -c $(OBJOUT)$@ $< $(CXXFLAGS) $(INCDIRS) -I /opt/devkitpro/libctru/include 
 
 %.o: %.c
-	$(CC) -c $(OBJOUT)$@ $< $(CFLAGS) $(INCDIRS)
+	$(CC) -c $(OBJOUT)$@ $< $(CFLAGS) $(INCDIRS) -I /opt/devkitpro/libctru/include
 
 clean-objs:
 	rm -f $(OBJS)

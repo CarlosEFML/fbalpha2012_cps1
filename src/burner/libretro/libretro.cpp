@@ -261,7 +261,7 @@ void InpDIPSWResetDIPs (void)
 			pgi = GameInp + bdi.nInput + nDIPOffset;
 
 			if (pgi)
-				pgi->Input.Constant.nConst = (pgi->Input.Constant.nConst & ~bdi.nMask) | (bdi.nSetting & bdi.nMask);	
+				pgi->Input.Constant.nConst = (pgi->Input.Constant.nConst & ~bdi.nMask) | (bdi.nSetting & bdi.nMask);
 		}
 		i++;
 	}
@@ -693,6 +693,7 @@ static void check_variables(bool first_run)
    }
 }
 
+int forceSkip = 2;
 void retro_run(void)
 {
    int width, height;
@@ -708,31 +709,40 @@ void retro_run(void)
    nBurnSoundRate = AUDIO_SAMPLERATE;
    //nBurnSoundLen = AUDIO_SEGMENT_LENGTH;
 
-   /* Check whether current frame should
-    * be skipped */
-   if ((frameskip_type > 0) && retro_audio_buff_active)
-   {
-      switch (frameskip_type)
-      {
-         case 1: /* auto */
-            nSkipFrame = retro_audio_buff_underrun ? 1 : 0;
-            break;
-         case 2: /* manual */
-            nSkipFrame = (retro_audio_buff_occupancy < frameskip_threshold) ? 1 : 0;
-            break;
-         default:
-            nSkipFrame = 0;
-            break;
-      }
+	 if (forceSkip) {
+		 nSkipFrame = 1;
+		 forceSkip--;
+	 } else {
+		 forceSkip = 2;
+	 }
 
-      if (!nSkipFrame || (frameskip_counter >= FRAMESKIP_MAX))
-      {
-         nSkipFrame        = 0;
-         frameskip_counter = 0;
-      }
-      else
-         frameskip_counter++;
-   }
+
+
+   // /* Check whether current frame should
+   //  * be skipped */
+   // if ((frameskip_type > 0) && retro_audio_buff_active)
+   // {
+   //    switch (frameskip_type)
+   //    {
+   //       case 1: /* auto */
+   //          nSkipFrame = retro_audio_buff_underrun ? 1 : 0;
+   //          break;
+   //       case 2: /* manual */
+   //          nSkipFrame = (retro_audio_buff_occupancy < frameskip_threshold) ? 1 : 0;
+   //          break;
+   //       default:
+   //          nSkipFrame = 0;
+   //          break;
+   //    }
+	 //
+   //    if (!nSkipFrame || (frameskip_counter >= FRAMESKIP_MAX))
+   //    {
+   //       nSkipFrame        = 0;
+   //       frameskip_counter = 0;
+   //    }
+   //    else
+   //       frameskip_counter++;
+   // }
 
    /* If frameskip settings have changed, update
     * frontend audio latency */
@@ -1118,7 +1128,7 @@ struct key_map
    const char *bii_name;
    unsigned nCode[2];
 };
-static uint8_t keybinds[0x5000][2]; 
+static uint8_t keybinds[0x5000][2];
 
 #define BIND_MAP_COUNT 300
 
@@ -1774,7 +1784,7 @@ static bool init_input(void)
    bind_map[PTR_INCR].bii_name = "P4 Jump";
    bind_map[PTR_INCR].nCode[0] = RETRO_DEVICE_ID_JOYPAD_B;
    bind_map[PTR_INCR].nCode[1] = 3;
-   
+
    bind_map[PTR_INCR].bii_name = "P4 Pin";
    bind_map[PTR_INCR].nCode[0] = RETRO_DEVICE_ID_JOYPAD_A;
    bind_map[PTR_INCR].nCode[1] = 3;
@@ -2000,7 +2010,7 @@ static bool init_input(void)
    bind_map[PTR_INCR].bii_name = "Brake 2";
    bind_map[PTR_INCR].nCode[0] = RETRO_DEVICE_ID_JOYPAD_L;
    bind_map[PTR_INCR].nCode[1] = 0;
-   
+
    bind_map[PTR_INCR].bii_name = "Brake 3";
    bind_map[PTR_INCR].nCode[0] = RETRO_DEVICE_ID_JOYPAD_L2;
    bind_map[PTR_INCR].nCode[1] = 0;

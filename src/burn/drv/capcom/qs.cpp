@@ -1,5 +1,52 @@
 #include "cps.h"
 /* QSound */
+#include <3ds.h>
+
+Thread threadHandle;
+Handle threadEventStart;
+Handle threadEventEnd;
+int threadInited = 0;
+
+void (*entry)(void);
+void entryEnd(void) {}
+
+// void (*entry)(void *);
+// void *entryArgs;
+//void entryEnd(void *args) {}
+
+void threadMain(void *arg)
+{
+  while (1) {
+      svcSignalEvent(threadEventEnd);
+      svcWaitSynchronization(threadEventStart, U64_MAX);
+      svcClearEvent(threadEventStart);
+      if (entry == entryEnd) break;
+      entry();
+  }
+}
+
+#define STACKSIZE (32 * 1024)
+void initThread() {
+  svcCreateEvent(&threadEventStart, RESET_ONESHOT);
+  svcCreateEvent(&threadEventEnd, RESET_ONESHOT);
+  APT_SetAppCpuTimeLimit(80);
+  threadHandle = threadCreate(threadMain, 0, STACKSIZE, 0x18, 1, true);
+}
+
+void waitThread() {
+  svcWaitSynchronization(threadEventEnd, U64_MAX);
+  svcClearEvent(threadEventEnd);
+}
+
+void startThread() {
+  svcSignalEvent(threadEventStart);
+}
+
+void releaseThread() {
+  svcSignalEvent(threadEventEnd);
+}
+
+
 
 static INT32 nQsndCyclesExtra;
 
@@ -13,6 +60,11 @@ static INT32 qsndTimerOver(INT32, INT32)
 INT32 QsndInit(void)
 {
 	INT32 nRate = 11025;
+
+	if (!threadInited) {
+    threadInited = 1;
+    initThread();
+  }
 
 	/* Init QSound z80 */
 	if (QsndZInit())
@@ -70,7 +122,7 @@ INT32 QsndScan(INT32 nAction)
 	return 0;
 }
 
-void QsndNewFrame(void)
+void QsndNewFrame_IMPL(void)
 {
    ZetNewFrame();
 
@@ -80,7 +132,14 @@ void QsndNewFrame(void)
    QscNewFrame();
 }
 
-void QsndEndFrame(void)
+void QsndNewFrame(void) {
+	waitThread();
+	entry = QsndNewFrame_IMPL;
+	startThread();
+}
+
+
+void QsndEndFrame_IMPL(void)
 {
    BurnTimerEndFrame(nCpsZ80Cycles);
    if (pBurnSoundOut)
@@ -90,7 +149,14 @@ void QsndEndFrame(void)
    ZetClose();
 }
 
-void QsndSyncZ80(void)
+void QsndEndFrame(void) {
+	waitThread();
+	entry = QsndEndFrame_IMPL;
+	startThread();
+}
+
+
+void QsndSyncZ80_IMPL(void)
 {
    int nCycles = (INT64)SekTotalCycles() * nCpsZ80Cycles / nCpsCycles;
 
@@ -98,4 +164,10 @@ void QsndSyncZ80(void)
       return;
 
    BurnTimerUpdate(nCycles);
+}
+
+void QsndSyncZ80(void) {
+	waitThread();
+	entry = QsndSyncZ80_IMPL;
+	startThread();
 }

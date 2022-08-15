@@ -262,26 +262,26 @@ static void Cps1Layers(void)
          if (nDrawMask & 1)
             CpsObjDrawDoX(0,7);
 
-         if (!Cps1DisableBgHi)
-         {
-            nBgHi=1;
-            switch (Draw[i+1])
-            {
-               case 1:
-                  if (nDrawMask & 2)
-                     DrawScroll1(0);
-                  break;
-               case 2:
-                  if (nDrawMask & 4)
-                     DrawScroll2Do();
-                  break;
-               case 3:
-                  if (nDrawMask & 8)
-                     DrawScroll3(0);
-                  break;
-            }
-            nBgHi=0;
-         }
+         // if (!Cps1DisableBgHi)
+         // {
+         //    nBgHi=1;
+         //    switch (Draw[i+1])
+         //    {
+         //       case 1:
+         //          if (nDrawMask & 2)
+         //             DrawScroll1(0);
+         //          break;
+         //       case 2:
+         //          if (nDrawMask & 4)
+         //             DrawScroll2Do();
+         //          break;
+         //       // case 3:
+         //       //    if (nDrawMask & 8)
+         //       //       DrawScroll3(0);
+         //       //    break;
+         //    }
+         //    nBgHi=0;
+         // }
       }
 
       /* Then Draw the scroll layer on top */
@@ -305,8 +305,12 @@ static void Cps1Layers(void)
    DrawScroll2Exit();
 }
 
+UINT16 emptyScreen[384 * 244];
+UINT16 clearColor = 0xFFFF;
+
 void CpsClearScreen(void)
 {
+/*
    INT32 i;
    UINT32* pClear = (UINT32*)pBurnDraw;
    UINT32 nColour = CpsPal[0xbff ^ 15] | CpsPal[0xbff ^ 15] << 16;
@@ -321,6 +325,15 @@ void CpsClearScreen(void)
       *pClear++ = nColour;
       *pClear++ = nColour;
    }
+*/
+  UINT16* pClear = (UINT16*)pBurnDraw;
+  UINT16 nColour = CpsPal[0xbff ^ 15];
+  if (nColour != clearColor) {
+    clearColor = nColour;
+    for (int i=0; i<(384 * 244); i++) emptyScreen[i] = nColour;
+  }
+
+  memcpy(pClear, emptyScreen, sizeof(emptyScreen));
 }
 
 static void DoDraw(INT32 Recalc)
@@ -331,7 +344,7 @@ static void DoDraw(INT32 Recalc)
       GetPalette(0, 6);
 	if (Recalc || bCpsUpdatePalEveryFrame)
       CpsPalUpdate(CpsSavePal);		/* recalc whole palette if needed */
-	
+
 	CpsClearScreen();
 
 	CpsLayersDoX();

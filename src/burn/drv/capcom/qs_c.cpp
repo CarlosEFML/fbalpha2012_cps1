@@ -113,7 +113,7 @@ INT32 QscInit(INT32 nRate)
 	for (INT32 i = 0; i < 33; i++) {
 		PanningVolumes[i] = (INT32)((256.0 / sqrt(32.0)) * sqrt((double)i));
 	}
-	
+
 	QsndGain[BURN_SND_QSND_OUTPUT_1] = 1.00;
 	QsndGain[BURN_SND_QSND_OUTPUT_2] = 1.00;
 	QsndOutputDir[BURN_SND_QSND_OUTPUT_1] = BURN_SND_ROUTE_LEFT;
@@ -266,110 +266,110 @@ INT32 QscUpdate(INT32 nEnd)
 		return 0;
 	}
 
-	if (Tams < nLen) {
-		BurnFree(Qs_s);
-		Tams = nLen;
-		Qs_s = (INT32*)BurnMalloc(sizeof(INT32) * 2 * Tams);
-	}
-
-	memset(Qs_s, 0, nLen * 2 * sizeof(INT32));
-
-	// Go through all channels
-	for (INT32 c = 0; c < 16; c++) {
-
-		// If the channel is playing, add the samples to the buffer
-		if (QChan[c].bKey) {
-			INT32 VolL = (QChan[c].nMasterVolume * QChan[c].nVolume[0]) >> 11;
-			INT32 VolR = (QChan[c].nMasterVolume * QChan[c].nVolume[1]) >> 11;
-			INT32* pTemp = Qs_s;
-			INT32 i = nLen;
-
-			// handle 1st sample
-			if (QChan[c].bKey & 2) {
-				while (QChan[c].nPos < 0x1000 && i) {
-					INT32 p = QChan[c].nPlayStart >> 12;
-					INT32 s = INTERPOLATE4PS_CUSTOM(QChan[c].nPos,
-												  0,
-												  QChan[c].PlayBank[p + 0],
-												  QChan[c].PlayBank[p + 1],
-												  QChan[c].PlayBank[p + 2],
-												  256);
-
-					pTemp[0] += s * VolL;
-					pTemp[1] += s * VolR;
-
-					QChan[c].nPos += QChan[c].nAdvance;				// increment sample position based on pitch
-
-					pTemp += 2;
-					i--;
-				}
-				if (i > 0) {
-					QChan[c].bKey &= ~2;
-					QChan[c].nPos = (QChan[c].nPos & 0x0FFF) + QChan[c].nPlayStart;
-				}
-			}
-
-			while (i > 0) {
-				INT32 s, p;
-
-				// Check for end of sample
-				if (QChan[c].nPos >= (QChan[c].nEnd - 0x3000)) {
-					if (QChan[c].nPos < QChan[c].nEnd) {
-						INT32 nIndex = 4 - ((QChan[c].nEnd - QChan[c].nPos) >> 12);
-						s = INTERPOLATE4PS_CUSTOM((QChan[c].nPos) & ((1 << 12) - 1),
-												  QChan[c].nEndBuffer[nIndex + 0],
-												  QChan[c].nEndBuffer[nIndex + 1],
-												  QChan[c].nEndBuffer[nIndex + 2],
-												  QChan[c].nEndBuffer[nIndex + 3],
-												  256);
-					} else {
-						if (QChan[c].nLoop) {					// Loop sample
-							if (QChan[c].nLoop <= 0x1000) {		// Don't play, but leave bKey on
-								QChan[c].nPos = QChan[c].nEnd - 0x1000;
-								break;
-							}
-							QChan[c].nPos -= QChan[c].nLoop;
-							continue;
-						} else {
-							QChan[c].bKey = 0;					// Stop playing
-							break;
-						}
-					}
-				} else {
-					p = (QChan[c].nPos >> 12) & 0xFFFF;
-					s = INTERPOLATE4PS_CUSTOM((QChan[c].nPos) & ((1 << 12) - 1),
-											  QChan[c].PlayBank[p + 0],
-											  QChan[c].PlayBank[p + 1],
-											  QChan[c].PlayBank[p + 2],
-											  QChan[c].PlayBank[p + 3],
-											  256);
-				}
-
-				// Add to the sound currently in the buffer
-				pTemp[0] += s * VolL;
-				pTemp[1] += s * VolR;
-
-				pTemp += 2;
-
-				QChan[c].nPos += QChan[c].nAdvance;				// increment sample position based on pitch
-
-				i--;
-			}
-		}
-	}
-	
-	INT16 *pDest = pBurnSoundOut + (nPos << 1);
-	INT32 *pSrc = Qs_s;
-	for (INT32 i = 0; i < nLen; i++) {
-		INT32 nLeftSample = 0, nRightSample = 0;
-			
-      nLeftSample += (INT32)((pSrc[(i << 1) + 0] >> 8) * QsndGain[BURN_SND_QSND_OUTPUT_1]);
-      nRightSample += (INT32)((pSrc[(i << 1) + 1] >> 8) * QsndGain[BURN_SND_QSND_OUTPUT_2]);
-			
-		pDest[(i << 1) + 0] = BURN_SND_CLIP(nLeftSample);
-		pDest[(i << 1) + 1] = BURN_SND_CLIP(nRightSample);
-	}
-	nPos = nEnd;	
+	// if (Tams < nLen) {
+	// 	BurnFree(Qs_s);
+	// 	Tams = nLen;
+	// 	Qs_s = (INT32*)BurnMalloc(sizeof(INT32) * 2 * Tams);
+	// }
+	//
+	// memset(Qs_s, 0, nLen * 2 * sizeof(INT32));
+	//
+	// // Go through all channels
+	// for (INT32 c = 0; c < 16; c++) {
+	//
+	// 	// If the channel is playing, add the samples to the buffer
+	// 	if (QChan[c].bKey) {
+	// 		INT32 VolL = (QChan[c].nMasterVolume * QChan[c].nVolume[0]) >> 11;
+	// 		INT32 VolR = (QChan[c].nMasterVolume * QChan[c].nVolume[1]) >> 11;
+	// 		INT32* pTemp = Qs_s;
+	// 		INT32 i = nLen;
+	//
+	// 		// handle 1st sample
+	// 		if (QChan[c].bKey & 2) {
+	// 			while (QChan[c].nPos < 0x1000 && i) {
+	// 				INT32 p = QChan[c].nPlayStart >> 12;
+	// 				INT32 s = INTERPOLATE4PS_CUSTOM(QChan[c].nPos,
+	// 											  0,
+	// 											  QChan[c].PlayBank[p + 0],
+	// 											  QChan[c].PlayBank[p + 1],
+	// 											  QChan[c].PlayBank[p + 2],
+	// 											  256);
+	//
+	// 				pTemp[0] += s * VolL;
+	// 				pTemp[1] += s * VolR;
+	//
+	// 				QChan[c].nPos += QChan[c].nAdvance;				// increment sample position based on pitch
+	//
+	// 				pTemp += 2;
+	// 				i--;
+	// 			}
+	// 			if (i > 0) {
+	// 				QChan[c].bKey &= ~2;
+	// 				QChan[c].nPos = (QChan[c].nPos & 0x0FFF) + QChan[c].nPlayStart;
+	// 			}
+	// 		}
+	//
+	// 		while (i > 0) {
+	// 			INT32 s, p;
+	//
+	// 			// Check for end of sample
+	// 			if (QChan[c].nPos >= (QChan[c].nEnd - 0x3000)) {
+	// 				if (QChan[c].nPos < QChan[c].nEnd) {
+	// 					INT32 nIndex = 4 - ((QChan[c].nEnd - QChan[c].nPos) >> 12);
+	// 					s = INTERPOLATE4PS_CUSTOM((QChan[c].nPos) & ((1 << 12) - 1),
+	// 											  QChan[c].nEndBuffer[nIndex + 0],
+	// 											  QChan[c].nEndBuffer[nIndex + 1],
+	// 											  QChan[c].nEndBuffer[nIndex + 2],
+	// 											  QChan[c].nEndBuffer[nIndex + 3],
+	// 											  256);
+	// 				} else {
+	// 					if (QChan[c].nLoop) {					// Loop sample
+	// 						if (QChan[c].nLoop <= 0x1000) {		// Don't play, but leave bKey on
+	// 							QChan[c].nPos = QChan[c].nEnd - 0x1000;
+	// 							break;
+	// 						}
+	// 						QChan[c].nPos -= QChan[c].nLoop;
+	// 						continue;
+	// 					} else {
+	// 						QChan[c].bKey = 0;					// Stop playing
+	// 						break;
+	// 					}
+	// 				}
+	// 			} else {
+	// 				p = (QChan[c].nPos >> 12) & 0xFFFF;
+	// 				s = INTERPOLATE4PS_CUSTOM((QChan[c].nPos) & ((1 << 12) - 1),
+	// 										  QChan[c].PlayBank[p + 0],
+	// 										  QChan[c].PlayBank[p + 1],
+	// 										  QChan[c].PlayBank[p + 2],
+	// 										  QChan[c].PlayBank[p + 3],
+	// 										  256);
+	// 			}
+	//
+	// 			// Add to the sound currently in the buffer
+	// 			pTemp[0] += s * VolL;
+	// 			pTemp[1] += s * VolR;
+	//
+	// 			pTemp += 2;
+	//
+	// 			QChan[c].nPos += QChan[c].nAdvance;				// increment sample position based on pitch
+	//
+	// 			i--;
+	// 		}
+	// 	}
+	// }
+	//
+	// INT16 *pDest = pBurnSoundOut + (nPos << 1);
+	// INT32 *pSrc = Qs_s;
+	// for (INT32 i = 0; i < nLen; i++) {
+	// 	INT32 nLeftSample = 0, nRightSample = 0;
+	//
+  //     nLeftSample += (INT32)((pSrc[(i << 1) + 0] >> 8) * QsndGain[BURN_SND_QSND_OUTPUT_1]);
+  //     nRightSample += (INT32)((pSrc[(i << 1) + 1] >> 8) * QsndGain[BURN_SND_QSND_OUTPUT_2]);
+	//
+	// 	pDest[(i << 1) + 0] = BURN_SND_CLIP(nLeftSample);
+	// 	pDest[(i << 1) + 1] = BURN_SND_CLIP(nRightSample);
+	// }
+	nPos = nEnd;
 
 	return 0;
 }
